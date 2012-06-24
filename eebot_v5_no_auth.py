@@ -38,7 +38,7 @@ currUserIds = []
 currDjs = []
 djOnCmd = False
 botPl = []
-songMetaData = {}
+songData = {}
 
 eeMods = [u'4e225bb9a3f75169a6005f50', u'4f489c83590ca22efa000d8d', u'4e0f5b93a3f751670a0553a6', u'4f36c9a2590ca21631001607', u'4f8b121feb35c1026300018d', u'4e3f5465a3f7512f10015692', u'4fdcd2f9aaa5cd1e7900032d', u'4e7c70bc4fe7d052ef034402'] # since 6/20
 
@@ -163,15 +163,10 @@ def roomChanged(data):
         botPl = data['list']
         print 'Bot playlist set!'
     eebot.playlistAll(setPl)
-    #if len(currDjs)==0:
-    #    eebot.addDj()
-    #if len(currDjs)==1:
-    #    eebot.addDj()
-    #    eebot.speak('Looks like you could use a friend!')
     newSong(data) #passing data to newSong function
 
 def newSong(data):
-    global banlist,songban,genre,album,artist,song,songId,addedSong,voteScore,DJid,ROOM,ee_roomid,songMetaData,lameGenres,lameArtists
+    global banlist,songban,genre,album,artist,song,songId,addedSong,voteScore,DJid,ROOM,ee_roomid,songData,lameGenres,lameArtists
     songData = data['room']['metadata']['current_song']
     DJid = songData['djid']
     DJname = songData['djname']
@@ -320,7 +315,7 @@ def addedDj(data):
 
 def addSnag():
     print 'Add song attempt...'
-    global addedSong,songId,botPl,songMetaData
+    global addedSong,songId,botPl,songData
     if addedSong:
         eebot.speak(u'Oh I JUST added this one. Good tune though!')
     else:
@@ -334,18 +329,16 @@ def addSnag():
         if not(alreadyInPl):
             addedSong = True
             eebot.playlistAdd(songId,len(botPl))
-            botPl.append(songMetaData)
+            botPl.append(songData)
             eebot.speak('Added song...')
             eebot.vote('up')
             eebot.snag()
-            #mtbtmr = threading.Timer(5,moveToBottom)
-            #mtbtmr.start()
         
 def moveToBottom():
-    global botPl,songMetaData
+    global botPl,songData
     eebot.playlistReorder(0,len(botPl))
-    botPl.remove(songMetaData)
-    botPl.append(songMetaData)
+    botPl.remove(songData)
+    botPl.append(songData)
     print 'Last song: ',botPl[len(botPl)-1]
 
 def printReg(data):
