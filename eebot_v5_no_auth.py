@@ -29,7 +29,7 @@ bl = open(banlistDir,'r')
 banlist = pickle.load(bl)
 bl.close()
 print 'Banlist: %s' % str(banlist)
-songban = ['nigger']
+songban = ['6e6967676572'.decode('hex')]
 songId  = ''
 DJid = ''
 addedSong = False
