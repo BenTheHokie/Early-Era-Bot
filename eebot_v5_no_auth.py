@@ -11,7 +11,7 @@ import unicodedata
 import threading
 import pickle
 
-eebot_auth = 'auth+live+xxxxxxxx'
+eebot_auth = 'auth+live+xxxxxx'
 eebot_userid = '4fdcd2f9aaa5cd1e7900032d'
 
 lsk_userid = '4e7c70bc4fe7d052ef034402'
@@ -24,7 +24,7 @@ USERID = eebot_userid
 ROOM   = ee_roomid
 
 eebot = Bot(AUTH,USERID,ROOM)
-banlistDir = 'M:\\Python\\TT bot\\eebotbanlist.txt'
+banlistDir = 'Hidden'
 bl = open(banlistDir,'r')
 banlist = pickle.load(bl)
 bl.close()
@@ -42,7 +42,7 @@ songData = {}
 
 eeMods = [u'4e225bb9a3f75169a6005f50', u'4f489c83590ca22efa000d8d', u'4e0f5b93a3f751670a0553a6', u'4f36c9a2590ca21631001607', u'4f8b121feb35c1026300018d', u'4e3f5465a3f7512f10015692', u'4fdcd2f9aaa5cd1e7900032d', u'4e7c70bc4fe7d052ef034402'] # since 6/20
 
-lameGenres = ['rap','hip','elect','trance','house','j pop','j-pop','dub','metal','indie','alt']
+lameGenres = ['rap','hip','elect','trance','house','j pop','j-pop','dub','metal','indie','alt','rock','heavy']
 lameArtists = ['skrillex',"lil' wayne",'lil wayne','astley','excision','various musique','cynic','fioko','mac miller','daft','goulding','basshunter','lmfao','wale','blige','drake','cudi','rick ross','birdman','m.o.p.','tribe called quest','peanut butter wolf','medina green','rhymefest','rza','guru','termanology','mob','kanye','mos def','slum','fiasco','doom','fatlip','smoke room','2pac','backstreet','adele','snoop dog','yankovic','beatles','fifty cent','50 cent','diplo','quintino','sandro silva','maroon 5','maroon five','larry platt','fiona apple','candlebox','filthy children','omc','o.m.c.','digital underground','lonely island','ratatat','akon','flo rida','nil admirari','mickey avalon','warp brothers','the holdup','billy joel','kid sister','roger miller','rihanna','daughtry','little boots','dubstep kings','pleq','roy orbison','cover nation','steven price','stray cats','young mc','kings of convenience','lil b',"lil' b",'john lennon','onerepublic','j-dash','david guetta','messiah','kilo','john denver','n.w.a.','nwa','deadmau','death','pumpkin','beatle','aerosmith','atilla','matthew herbert','electric swing circus','parov stela','diablo swing orchestra','tape five','jamie berry','esla','rube & dusty','rube and dusty','cloudfactory','ecklektic','cherry poppin'+"'"+' daddies','voodoo','big phat band','c2c','remix','penis','poop','anal ',' anal','shit','fuck','tits mcgee','tom petty','electric','waka','toilet']
 
 def speak(data):
@@ -163,6 +163,11 @@ def roomChanged(data):
         botPl = data['list']
         print 'Bot playlist set!'
     eebot.playlistAll(setPl)
+    #if len(currDjs)==0:
+    #    eebot.addDj()
+    #if len(currDjs)==1:
+    #    eebot.addDj()
+    #    eebot.speak('Looks like you could use a friend!')
     newSong(data) #passing data to newSong function
 
 def newSong(data):
@@ -176,6 +181,7 @@ def newSong(data):
     album = songData['metadata']['album']
     songId = songData['_id']
     songMetaData = songData['metadata']
+    print songData
     print DJid, DJname
     voteScore = .5
     addedSong = False
@@ -215,7 +221,7 @@ def endedSong(data):
         waitForSong=False
     if data['room']['metadata']['current_song']['djid']==eebot_userid:
         botPl.remove(botPl[0])
-        botPl.append(data['room']['metadata']['current_song']['metadata'])
+        botPl.append(data['room']['metadata']['current_song']) #Move the song in the memory playlist to the end.
 
 def userDereg(data):
     global currUserIds
@@ -235,21 +241,31 @@ def userReg(data):
     if userid in idBanList:
         eebot.bootUser(userid,'Banned!')
     if ROOM == ee_roomid:
-        eebot.pm('Hey there. Type EE Bot DJ on in the chat to ask me to DJ or /commands (also in the chat) for a list of my commands. Have fun!',userid)
+        eebot.pm('Hey there. Type EE Bot DJ on in the chat to ask me to DJ or /commands (also in the chat) for a list of my commands. Type /skip in the chat if I\'m stuck loading. Have fun!',userid)
         
 def pmreply(data):
-    global banlist,songId,ROOM,songId
+    global banlist,songId,ROOM,songId,voteScore
     userid = data['senderid']
     message = data['text']
-
+    if re.match('awesome',message.lower()):
+        if voteScore >= .6:
+            eebot.vote('up')
+        else:
+            if userid in eeMods:
+                eebot.vote('up')
+            else:
+                def modOrVotes(data):
+                    if userid in data['room']['metadata']['moderator_id'] or userid == lsk_userid:
+                        eebot.vote('up')
+                eebot.roomInfo(False,modOrVotes)    
     if re.match('(ee )?(bot )?add song',message.lower()):
         if ROOM == ee_roomid:
             def checkMod(data):
                 if userid in data['room']['metadata']['moderator_id'] or userid == lsk_userid:
-                    addSnag()
+                    addSnag(False)
             eebot.roomInfo(False,checkMod)
         elif userid in eeMods:
-            addSnag()
+            addSnag(False)
     if re.match('info of (.+)',message.lower()):
         eebot.getProfile(message[8:],printReg)
     if re.match('(/)?mods',message.lower()):
@@ -268,7 +284,14 @@ def pmreply(data):
             eebot.getProfile(message[8:],profName)
         else:
             eebot.pm('That is an invalid userid.',userid)
-            
+    if re.match('id of (.+)',message.lower()):
+        def profId(data):
+            if data['success']:
+                eebot.pm('The User ID of the user is %s.' % data['userid'],userid)
+            else:
+                eebot.pm('Error: %s' % data['err'],userid)
+        eebot.getUserId(message[6:],profId)
+        
     if userid == lsk_userid:
         if message.lower()=='snag':
             eebot.pm('Snag attempt...',lsk_userid)
@@ -279,6 +302,21 @@ def pmreply(data):
             eebot.speak(message[5:])
         if message.lower() == 'ban list':
             eebot.pm(str(banlist),lsk_userid)
+        if re.match('print pl(aylist)?',message.lower()):
+            global botPl
+            print botPl
+        if re.match('print genres',message.lower()):
+            genrelist = []
+            fulllist = []
+            global botPl
+            for i in range(len(botPl)):
+                if not(botPl[i]['metadata']['genre'] in genrelist or botPl[i]['metadata']['genre']==''):
+                    genrelist.append(botPl[i]['metadata']['genre'])
+                    fulllist.append('%s: "%s" by %s' % (botPl[i]['metadata']['genre'],botPl[i]['metadata']['song'],botPl[i]['metadata']['artist']))
+            print 'Genre list: %s' % ', '.join(genrelist)
+            print ', ||'.join(fulllist)
+        if re.match('avatar (.+)',message.lower()):
+            eebot.setAvatar(int(message[7:]))
     
 def updateVotes(data):
     global voteScore
@@ -313,26 +351,29 @@ def addedDj(data):
             eebot.remDj()
     djOnCmd = False
 
-def addSnag():
+def addSnag(speak = True):
     print 'Add song attempt...'
     global addedSong,songId,botPl,songData
     if addedSong:
-        eebot.speak(u'Oh I JUST added this one. Good tune though!')
+        if speak: eebot.speak(u'Oh I JUST added this one. Good tune though!')
     else:
         alreadyInPl = False
         for i in range(len(botPl)):
             if songId==botPl[i]['_id']:
                 alreadyInPl = True
-                eebot.speak('I already have this song!')
+                if speak: eebot.speak('I already have this song!')
                 eebot.vote('up')
                 break
         if not(alreadyInPl):
             addedSong = True
             eebot.playlistAdd(songId,len(botPl))
             botPl.append(songData)
-            eebot.speak('Added song...')
+            if speak: eebot.speak('Added song...')
             eebot.vote('up')
             eebot.snag()
+            print 'Last song: ',botPl[len(botPl)-1]
+            #mtbtmr = threading.Timer(5,moveToBottom)
+            #mtbtmr.start()
         
 def moveToBottom():
     global botPl,songData
