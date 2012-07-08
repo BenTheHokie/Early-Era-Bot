@@ -2,7 +2,7 @@
 
 This bot requires the Turntable API (created by [Alain Gilbert](https://github.com/alaingilbert) many thanks) and websocket that can be readily downloaded [here.](https://github.com/alaingilbert/Turntable-API/tree/master/python_ttapi) Just extract ttapi.py, websocket.py, and your bot's Python code to the same folder and open the bot code with Python or your favorite IDE. I hope you can get some educational value out of this.
 
-Note: Never give out your auth or authorization number. This is, in essence, an unchangeable password.
+Note: Never give out your auth or authorization key. This is, in essence, an unchangeable password. Your auth key (or your bot's for that matter) can be found using [this bookmarklet.](http://alaingilbert.github.com/Turntable-API/bookmarklet.html)
 
 ### Commands:
 
