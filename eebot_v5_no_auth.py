@@ -42,11 +42,11 @@ songData = {}
 
 eeMods = [u'4e225bb9a3f75169a6005f50', u'4f489c83590ca22efa000d8d', u'4e0f5b93a3f751670a0553a6', u'4f36c9a2590ca21631001607', u'4f8b121feb35c1026300018d', u'4e3f5465a3f7512f10015692', u'4fdcd2f9aaa5cd1e7900032d', u'4e7c70bc4fe7d052ef034402'] # since 6/20
 
-lameGenres = ['rap','hip','elect','trance','house','j pop','j-pop','dub','metal','indie','alt','rock','heavy']
-lameArtists = ['skrillex',"lil' wayne",'lil wayne','astley','excision','various musique','cynic','fioko','mac miller','daft','goulding','basshunter','lmfao','wale','blige','drake','cudi','rick ross','birdman','m.o.p.','tribe called quest','peanut butter wolf','medina green','rhymefest','rza','guru','termanology','mob','kanye','mos def','slum','fiasco','doom','fatlip','smoke room','2pac','backstreet','adele','snoop dog','yankovic','beatles','fifty cent','50 cent','diplo','quintino','sandro silva','maroon 5','maroon five','larry platt','fiona apple','candlebox','filthy children','omc','o.m.c.','digital underground','lonely island','ratatat','akon','flo rida','nil admirari','mickey avalon','warp brothers','the holdup','billy joel','kid sister','roger miller','rihanna','daughtry','little boots','dubstep kings','pleq','roy orbison','cover nation','steven price','stray cats','young mc','kings of convenience','lil b',"lil' b",'john lennon','onerepublic','j-dash','david guetta','messiah','kilo','john denver','n.w.a.','nwa','deadmau','death','pumpkin','beatle','aerosmith','atilla','matthew herbert','electric swing circus','parov stela','diablo swing orchestra','tape five','jamie berry','esla','rube & dusty','rube and dusty','cloudfactory','ecklektic','cherry poppin'+"'"+' daddies','voodoo','big phat band','c2c','remix','penis','poop','anal ',' anal','shit','fuck','tits mcgee','tom petty','electric','waka','toilet']
+lameGenres = ['rap','hip','elect','trance','house','j pop','j-pop','dub','metal','indie','alt','rock','heavy','classical','opera']
+lameArtists = ['skrillex',"lil' wayne",'lil wayne','astley','excision','various musique','cynic','fioko','mac miller','daft','goulding','basshunter','lmfao','wale','blige','drake','cudi','rick ross','birdman','m.o.p.','tribe called quest','peanut butter wolf','medina green','rhymefest','rza','guru','termanology','mob','kanye','mos def','slum','fiasco','doom','fatlip','smoke room','2pac','backstreet','adele','snoop dog','yankovic','beatles','fifty cent','50 cent','diplo','quintino','sandro silva','maroon 5','maroon five','larry platt','fiona apple','candlebox','filthy children','omc','o.m.c.','digital underground','lonely island','ratatat','akon','flo rida','nil admirari','mickey avalon','warp brothers','the holdup','billy joel','kid sister','roger miller','rihanna','daughtry','little boots','dubstep kings','pleq','roy orbison','cover nation','steven price','stray cats','young mc','kings of convenience','lil b',"lil' b",'john lennon','onerepublic','j-dash','david guetta','messiah','kilo','john denver','n.w.a.','nwa','deadmau','death','pumpkin','beatle','aerosmith','atilla','matthew herbert','electric swing circus','parov stela','diablo swing orchestra','tape five','jamie berry','esla','rube & dusty','rube and dusty','cloudfactory','ecklektic','cherry poppin'+"'"+' daddies','voodoo','big phat band','c2c','remix','penis','poop','anal ',' anal','shit','fuck','tits mcgee','tom petty','electric','waka','toilet','superman','rae jepsen']
 
 def speak(data):
-    global banlist,songId,addedSong,voteScore,genre,album,artist,song,songId,djOnCmd,ROOM,ee_roomid
+    global banlist,songId,addedSong,voteScore,genre,album,artist,song,songId,djOnCmd,ROOM,ee_roomid,songData
     name = data['name']
     userid = data['userid']
     text = data['text']
@@ -55,15 +55,22 @@ def speak(data):
     if re.match('(ee bot |/)help',text.lower()):
         eebot.speak('@%s. The rules for this room are in the room description. Type /commands for bot commands. Please note that we take trolling and racism very seriously. If you troll or play a racist song, be prepared to be banned without warning.' % name)
     if re.match('/commands',text.lower()):
-        eebot.speak('Current commands: "DJ on", "DJ off", "/skip", "/album", "/genre", "/bop" (room vote at or above 60%), "/lame" (vote < or = 45%), "/banlist" Mod commands: "EE Bot ban username", "EE Bot add song", "EE Bot unban username"')
+        eebot.speak('Current commands: "DJ on", "DJ off", "/skip", "/album", "/genre", "/coverart", "/pl info", "/bop", (room vote at or above 60%), "/lame" (vote < or = 45%), "/banlist" Mod commands: "EE Bot ban username", "EE Bot add song", "EE Bot unban username"')
     if re.match('((ee )?bot )?dj on',text.lower()):
         if ROOM == ee_roomid:
             djOnCmd = True
             eebot.addDj()
         else:
             eebot.speak('I can\'t DJ in this room!')
+    if re.match('/pl(aylist)? (length|info)',text.lower()):
+        totsecs = 0
+        for i in range(len(botPl)):
+            totsecs += botPl[i]['metadata']['length']
+        eebot.speak('I have %s songs in my playlist for a total of %s of play time!' % (str(len(botPl)),secsToHMS(totsecs)['shorthm']))
     if re.match('((ee )?bot )?dj off',text.lower()):
         eebot.remDj()
+    if re.match('/cover( )?art',text.lower()):
+        eebot.speak(songData['metadata']['coverart'])
     if re.match('(ee bot |/)skip',text.lower()):
         eebot.stopSong()
     if re.match('/ban( )?list',text.lower()):
@@ -179,6 +186,9 @@ def newSong(data):
     song = songData['metadata']['song']
     genre = songData['metadata']['genre']
     album = songData['metadata']['album']
+    explicit = False
+    if songData['metadata'].has_key('explicit'):
+        explicit = songData['metadata']['explicit']
     songId = songData['_id']
     songMetaData = songData['metadata']
     print songData
@@ -330,12 +340,15 @@ def updateVotes(data):
 def removedDj(data):
     global currDjs,ROOM,ee_roomid
     currDjs.remove(data['user'][0]['userid'])
-    if len(currDjs)==1 and not(eebot_userid == data['user'][0]['userid'] or data.has_key('modid')): # If the user was escorted off or booed off, don't jump off of the DJ stand
-        t = threading.Timer(1,eebot.remDj)
-        t.start() # When the bot jumps right off after another user does, the bot's song starts playing so we give it a second to allow TT to "catch up".
+    jump = True
     if len(currDjs)==1 and not(eebot_userid in currDjs) and not(eebot_userid == data['user'][0]['userid']) and ROOM == ee_roomid:
         eebot.addDj()
-        eebot.speak("Looks like you could use a friend up there.")        
+        eebot.speak("Looks like you could use a friend up there.")
+        jump = False
+    if len(currDjs)==1 and jump and not(eebot_userid == data['user'][0]['userid'] or data.has_key('modid')): # If the user was escorted off or booed off, don't jump off of the DJ stand
+        t = threading.Timer(1,eebot.remDj)
+        t.start() # When the bot jumps right off after another user does, the bot's song starts playing so we give it a second to allow TT to "catch up".
+
             
 def addedDj(data):
     global currDjs,DJid,eebot_userid,waitForSong,djOnCmd,ROOM,ee_roomid
@@ -354,6 +367,10 @@ def addedDj(data):
 def addSnag(speak = True):
     print 'Add song attempt...'
     global addedSong,songId,botPl,songData
+    #print 'addedSong:      %s' % str(addedSong)
+    #print 'songId:         %s' % str(songId)
+    #print 'botPl (last):   %s' % str(botPl[len(botPl)-1])
+    #print 'songData:       %s' % str(songData)
     if addedSong:
         if speak: eebot.speak(u'Oh I JUST added this one. Good tune though!')
     else:
@@ -381,6 +398,21 @@ def moveToBottom():
     botPl.remove(songData)
     botPl.append(songData)
     print 'Last song: ',botPl[len(botPl)-1]
+
+def secsToHMS(totsecs):
+    def plVal(num):
+        if abs(num)==1:
+            return ''
+        else:
+            return 's'
+    secs      = totsecs%60
+    totmins   = (totsecs - secs)/60
+    hrs       = (totmins - totmins%60)/60
+    mins      = totmins - hrs*60
+    strhrs    = str(hrs)
+    strmins   = '0'*(mins<10)+str(mins)
+    strsecs   = '0'*(secs<10)+str(secs)
+    return {'hm':'%s:%s' % (strhrs,strmins),'hms':'%s:%s:%s' % (strhrs,strmins,strsecs),'hours':hrs,'totalhours':hrs,'totalmins':totmins,'mins':mins,'shorthms':'%s hr%s %s min%s %s sec%s' % (strhrs,plVal(hrs),strmins,plVal(mins),strsecs,plVal(secs)),'longhms':'%s hour%s %s minute%s %s sec%s' % (strhrs,plVal(hrs),strmins,plVal(mins),strsecs,plVal(secs)),'shorthm':'%s hr%s %s min%s' % (strhrs,plVal(hrs),strmins,plVal(mins)),'longhm':'%s hour%s %s minute%s' % (strhrs,plVal(hrs),strmins,plVal(mins))}
 
 def printReg(data):
     print data
